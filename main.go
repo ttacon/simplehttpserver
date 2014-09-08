@@ -26,8 +26,19 @@ func main() {
 		curr = *dir
 	}
 
-	http.Handle("/", http.StripPrefix("/", http.FileServer(http.Dir(curr))))
+	fs := http.FileServer(http.Dir(curr))
+
+	http.Handle("/", http.StripPrefix("/", LoggerHandler{fs}))
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
+}
+
+type LoggerHandler struct {
+	fs http.Handler
+}
+
+func (l LoggerHandler) ServeHTTP(resp http.ResponseWriter, req *http.Request) {
+	log.Printf("%s %s\n", req.Method, req.RequestURI)
+	l.fs.ServeHTTP(resp, req)
 }
